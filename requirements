@@ -1,0 +1,6 @@
+pyppeteer
+psycopg2
+aiopg
+peewee
+peewee_async
+pyppeteer_stealth
