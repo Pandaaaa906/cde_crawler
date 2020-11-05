@@ -1,35 +1,37 @@
 import asyncio
-import logging
 from math import inf
 
+from loguru import logger
 from pyppeteer import launch, errors
 from peewee_async import Manager
 from peewee import IntegrityError
 from pyppeteer_stealth import stealth
+from more_itertools import first
 
-from .models import database, CDE
+from models import database, CDE
 from psycopg2.errors import UniqueViolation
 
-from .utils import first, strip
+from utils import strip
 
-FORMAT = '%(asctime)-15s %(levelname)s %(funcName)s %(message)s'
-formatter = logging.Formatter(FORMAT)
-logging.basicConfig(format=FORMAT)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
-fh = logging.FileHandler('scrap_cde.log')
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
-
-logger.addHandler(fh)
+logger.add('logs/cde_crawler.log')
 
 base_url = "http://www.cde.org.cn/news.do?method=changePage&pageName=service&frameStr=20"
-
-
 loop = asyncio.get_event_loop()
 objects = Manager(database=database, loop=loop)
-objects.database.allow_sync = False
+
+# objects.database.allow_sync = False
+
+args = ['--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-infobars',
+        '--window-position=0,0',
+        '--ignore-certifcate-errors',
+        '--disable-gpu',
+        '--ignore-certifcate-errors-spki-list',
+        '--disable-gpu-shader-disk-cache',
+        '--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3312.0 Safari/537.36'
+        ]
 
 
 async def get_text_by_xpath(page, xpath: str):
@@ -43,9 +45,9 @@ async def process_item(item):
             **item
         )
     except UniqueViolation:
-        logger.debug(f"Unique Violation Occurred:{item!r}")
+        logger.trace(f"Unique Violation Occurred:{item!r}")
     except IntegrityError:
-        logger.debug(f"Unique Violation Occurred:{item!r}")
+        logger.trace(f"Unique Violation Occurred:{item!r}")
 
 
 async def parse_list(page):
@@ -71,13 +73,14 @@ async def parse_list(page):
 
 async def get_catalog(page, start_page: int = 1, stop_page: int = None):
     global snapshot1
+    logger.info("Start crawling")
     await (await page.waitForXPath('//td[@id="menuE_02"]', visible=True)).click()
     await (await page.waitForXPath('//td[@id="menuE_021"]//a[contains(text(), "受理目录浏览")]')).click()
 
     chl_f, *_ = page.mainFrame.childFrames
     await chl_f.waitForSelector('select[name="year"]')
     await chl_f.select('select[name="year"]', '全部')
-    await (await chl_f.waitForXPath('//span[@class="menu"]/img')).click()
+    await (await chl_f.waitForXPath('//span[@class="menu"]')).click()
 
     # select more record in one page
     await chl_f.select('#pageMaxNum', '80')
@@ -113,14 +116,16 @@ async def get_catalog(page, start_page: int = 1, stop_page: int = None):
 
 async def main(start_page: int = None, stop_page: int = None):
     # Initial
+    CDE.create_table(fail_silently=True)
+    logger.info("starting browser")
     browser = await launch(ignoreHTTPSErrors=True,
                            headless=True,
                            userDataDir='./tmp',
-                           # executablePath="C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-                           autoClose=False)
+                           args=args
+                           )
     page = await browser.newPage()
     await stealth(page)
-    await page.setViewport({'width': 1400, 'height': 900})
+    await page.setViewport({'width': 800, 'height': 600})
     await page.goto(base_url)
 
     # Entering target page

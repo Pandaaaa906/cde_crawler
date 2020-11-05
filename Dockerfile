@@ -1,17 +1,20 @@
-FROM python:3.6
-ENV DOCKER_CONTAINER=1
-
-COPY ./cde_crawler /cde_crawler
-COPY ./requirements /cde_crawler
-WORKDIR /cde_crawler
-
-COPY ./local-chromium /pyppeteer_home/local-chromium
-ENV PYPPETEER_HOME=/pyppeteer_home
-
+FROM python:3.6 as cde_base
+ENV PYPPETEER_HOME=/pyppeteer
 RUN mkdir ~/.pip
+COPY ./requirements /tmp/requirements
 RUN echo "[global]\nindex-url = https://pypi.tuna.tsinghua.edu.cn/simple" | tee ~/.pip/pip.conf
-RUN pip install -r requirements
+RUN pip install -r /tmp/requirements && pyppeteer-install
 
-RUN python3 models.py
+RUN apt update && apt -y install libnss3 xvfb gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 \
+libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 \
+libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 \
+libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 \
+libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget && \
+rm -rf /var/lib/apt/lists/*
 
-CMD python3 scrap_cde.py
+FROM cde_base
+
+COPY ./cde_crawler /app
+WORKDIR /app
+
+ENTRYPOINT ["python3", "scrap_cde.py"]

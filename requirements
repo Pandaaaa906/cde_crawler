@@ -4,3 +4,6 @@ aiopg
 peewee
 peewee_async
 pyppeteer_stealth
+aiopg
+loguru
+more_itertools

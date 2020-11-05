@@ -1,7 +1,16 @@
+from os import getenv
+
 import peewee
 import peewee_async
-from .database_settings import database
 
+
+database = {
+    'database': getenv('DB_DATABASE'),
+    'user': getenv('DB_USER'),
+    'password': getenv('DB_PASSWORD'),
+    'host': getenv('DB_HOST'),
+    'port': getenv('DB_PORT', '5432'),
+}
 
 database = peewee_async.PostgresqlDatabase(**database)
 
@@ -18,7 +27,7 @@ class CDE(peewee.Model):
     class Meta:
         database = database
         indexes = (
-            (('code', 'accept_date'), True),
+            (('code', ), True),
         )
 
 
