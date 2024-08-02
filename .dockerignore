@@ -196,3 +196,5 @@ dmypy.json
 .pyre/
 
 tmp/
+cde_crawler/logs/
+user_dir/

@@ -1,9 +1,8 @@
-pyppeteer
-psycopg2
-aiopg
-peewee
-peewee_async
-pyppeteer_stealth
-aiopg
-loguru
-more_itertools
+playwright~=1.45.1
+playwright-stealth~=1.0.6
+psycopg2~=2.9.9
+asyncpg~=0.29.0
+loguru~=0.7.2
+more_itertools~=10.3.0
+SQLAlchemy~=2.0.31
+parsel~=1.9.1
