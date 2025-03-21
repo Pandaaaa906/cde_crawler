@@ -1,15 +1,16 @@
 import asyncio
 from datetime import date
 
+from install_playwright import install
 from loguru import logger
 from parsel import Selector
 from playwright.async_api import async_playwright, expect
 from playwright_stealth import stealth_async, StealthConfig
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from cde_crawler import settings
-from models import engine, CDE
-from utils.db_operations import upsert_table
+from .. import settings
+from cde_crawler.models import engine, CDE
+from cde_crawler.utils.db_operations import upsert_table
 
 logger.add(str(settings.ROOT / 'logs/cde_crawler.log'))
 
@@ -22,6 +23,7 @@ async def main(start_page: int = None, headless=True, timeout=5 * 60 * 1000):
         async_playwright() as p,
         Session() as db
     ):
+        install(p.chromium)
         context = await p.chromium.launch_persistent_context(
             settings.usr_dir,
             headless=headless,
@@ -65,7 +67,7 @@ async def main(start_page: int = None, headless=True, timeout=5 * 60 * 1000):
 
             rows = html.xpath('//tbody[@id="acceptVarietyInfoTbody"]/tr')
             for row in rows:
-                accept_date = row.xpath('./td[8]/text()').get()
+                accept_date = row.xpath('./td[8]/text()').get('').strip()
                 accept_date = date.fromisoformat(accept_date) if accept_date else None
                 d = {
                     "code": row.xpath('./td[2]/text()').get(),
@@ -84,7 +86,8 @@ async def main(start_page: int = None, headless=True, timeout=5 * 60 * 1000):
             next_page = page.locator('xpath=//a[text()="下一页"]').first
             try:
                 await next_page.click(timeout=2000)
-            except:
+            except Exception as e:
+                logger.error(e)
                 break
 
 

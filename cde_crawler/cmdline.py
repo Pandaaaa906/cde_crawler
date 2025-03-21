@@ -2,7 +2,7 @@ import asyncio
 
 import typer
 
-from spiders import scrap_cde, cde_approval
+from cde_crawler.spiders import scrap_cde, cde_approval
 
 app = typer.Typer()
 

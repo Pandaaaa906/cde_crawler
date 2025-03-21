@@ -6,3 +6,5 @@ loguru~=0.7.2
 more_itertools~=10.3.0
 SQLAlchemy~=2.0.31
 parsel~=1.9.1
+typer~=0.15.2
+install-playwright

@@ -1,6 +1,7 @@
 import asyncio
 import re
 
+from install_playwright import install
 from loguru import logger
 from parsel import Selector
 from playwright.async_api import async_playwright, expect
@@ -8,7 +9,7 @@ from playwright_stealth import stealth_async, StealthConfig
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from cde_crawler import settings
-from models import engine
+from cde_crawler.models import engine
 
 logger.add(str(settings.ROOT / 'logs/cde_crawler.log'))
 
@@ -83,6 +84,7 @@ async def list_page_worker(context, tasks: asyncio.Queue, *, start_page: int = N
 async def main(start_page: int = None, max_workers: int = 1, headless=True, timeout=5 * 60 * 1000):
     tasks = asyncio.Queue()
     async with async_playwright() as p:
+        install(p.chromium)
         context = await p.chromium.launch_persistent_context(
             settings.usr_dir,
             headless=headless,

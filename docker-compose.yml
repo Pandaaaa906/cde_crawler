@@ -7,4 +7,4 @@ services:
       - .env
     volumes:
       - /www/cde_crawler/logs:/app/logs
-      - /www/cde_crawler/pyppeteer:/pyppeteer
+      - /www/ms-playwright:/ms-playwright
